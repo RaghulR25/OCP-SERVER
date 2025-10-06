@@ -35,8 +35,8 @@ router.post("/create-checkout-session", async (req, res) => {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.FRONTEND_URL}/payment-success?success=true&user=${userId}&counselor=${counselorId}&date=${date}&time=${time}`,
-      cancel_url: `${process.env.FRONTEND_URL}/payment-cancel?cancel=true`,
+success_url: `${process.env.FRONTEND_URL}/dashboard?payment=success&user=${userId}&counselor=${counselorId}&date=${date}&time=${time}`,
+  cancel_url: `${process.env.FRONTEND_URL}/dashboard?payment=failed`,
     });
 
     console.log("✅ Stripe session created:", session.id);
