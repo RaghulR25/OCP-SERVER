@@ -1,68 +1,66 @@
+// routes/bookingRoutes.js
 import express from "express";
 import Booking from "../modles/Booking.js";
-import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Create a booking
-router.post("/", protect, async (req, res) => {
+// ✅ Get all bookings for a specific user (with counselor populated)
+router.get("/user/:userId",  async (req, res) => {
+  try {
+    const bookings = await Booking.find({ user: req.params.userId })
+      .populate("counselor", "name email expectedFees specialty description")
+      .populate("user", "name email");
+
+    res.json(bookings);
+  } catch (err) {
+    console.error("Error fetching bookings:", err);
+    res.status(500).json({ message: "Failed to fetch bookings" });
+  }
+});
+
+// ✅ Create a new booking
+router.post("/", async (req, res) => {
   try {
     const { user, counselor, date, time } = req.body;
-
     const booking = await Booking.create({ user, counselor, date, time });
-
-    const populatedBooking = await booking.populate([
-      { path: "user", select: "name email role" },
-      { path: "counselor", select: "name email role specialty" },
-    ]);
-
+    const populatedBooking = await booking.populate("counselor", "name email expectedFees");
     res.status(201).json(populatedBooking);
   } catch (err) {
-    res.status(500).json({ message: "Booking failed", error: err.message });
+    console.error("Error creating booking:", err);
+    res.status(500).json({ message: "Failed to create booking" });
   }
 });
 
-// Get all bookings
-router.get("/", protect, async (req, res) => {
+
+/**
+ * 📌 Update booking payment status
+ */
+router.put("/:bookingId/payment", async (req, res) => {
   try {
-    const bookings = await Booking.find()
-      .populate("user", "name email role")
-      .populate("counselor", "name email role specialty");
-    res.json(bookings);
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      req.params.bookingId,
+      { paymentDone: true },
+      { new: true }
+    );
+    res.json(updatedBooking);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch bookings" });
+    console.error("Error updating payment:", err);
+    res.status(500).json({ message: "Failed to update payment" });
   }
 });
 
-router.get("/counselor/:id", protect, async (req, res) => {
+/**
+ * 📌 Get all bookings (Admin use)
+ */
+router.get("/", async (req, res) => {
   try {
-    const bookings = await Booking.find({ counselor: req.params.id })
-      .populate("user", "name email role")
-      .populate("counselor", "name email role specialty");
-    res.json(bookings);
+    const allBookings = await Booking.find()
+      .populate("user", "name email")
+      .populate("counselor", "name email expectedFees");
+    res.json(allBookings);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch counselor bookings" });
-  }
-});
-
-router.get("/:id", protect, async (req, res) => {
-  try {
-    const booking = await Booking.findById(req.params.id)
-      .populate("user", "name email role")
-      .populate("counselor", "name email role specialty");
-    res.json(booking);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch booking" });
-  }
-});
- router.get("/user/:id", protect, async (req, res) => {
-  try {
-    const bookings = await Booking.find({ user: req.params.id })
-      .populate("counselor", "name email specialty")
-      .populate("user", "name email");
-    res.json(bookings);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch user bookings" });
+    console.error("Error fetching all bookings:", err);
+    res.status(500).json({ message: "Failed to fetch all bookings" });
   }
 });
 
