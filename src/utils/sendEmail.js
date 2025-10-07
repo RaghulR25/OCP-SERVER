@@ -1,5 +1,3 @@
-
-
 const resend =(process.env.RESEND_API_KEY);
 
 export const sendEmail = async (email, name) => {
