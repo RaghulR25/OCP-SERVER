@@ -17,6 +17,7 @@ import paymentRoutes from "./src/routers/payment.js";
 dotenv.config();
 const app = express();
 
+console.log("🔑 Resend API Key:", process.env.RESEND_API_KEY);
 // Middlewares
 app.use(cors());
 app.use(express.json());
