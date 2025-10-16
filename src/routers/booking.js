@@ -1,21 +1,24 @@
-// routes/bookingRoutes.js
+
 import express from "express";
 import Booking from "../modles/Booking.js";
 import { protect } from "../middleware/auth.js";
 import { getBookingsByUser } from "../controllers/bookingController.js";
+import Counselor from "../modles/Counselor.js";
+import { getBookingById } from "../controllers/bookingController.js";
 
 const router = express.Router();
 
-// ✅ Get all bookings for a specific user with counselor details
+
 router.get("/user/:userId", getBookingsByUser);
 
-// ✅ Get all bookings for a specific counselor (with user info)
+
 router.get("/counselor/:counselorId", protect, async (req, res) => {
   try {
     const counselorId = req.params.counselorId.trim();
-
+    console.log("Fetching bookings for counselorId:", counselorId);
+    
     const bookings = await Booking.find({ counselor: counselorId })
-      .populate("user", "name email") // populate user info
+      .populate("user", "name email") 
       .sort({ date: 1, time: 1 });
 
     res.status(200).json(bookings);
@@ -25,17 +28,19 @@ router.get("/counselor/:counselorId", protect, async (req, res) => {
   }
 });
 
-// ✅ Create a new booking
+
 router.post("/", protect, async (req, res) => {
   try {
-    const { user, counselor, date, time } = req.body;
+    const { counselor, date, time } = req.body;
+    console.log("Creating booking with data:", req.body);
 
-    if (!user || !counselor || !date || !time) {
+    if ( !counselor || !date || !time) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const booking = await Booking.create({ user, counselor, date, time });
-
+    const counselorID = await Counselor.findById(counselor);
+    const booking = new Booking({ user: req.user._id, counselor: counselorID._id, date, time });
+    await booking.save(); 
     const populatedBooking = await booking.populate(
       "counselor",
       "name email expectedFees specialty description"
@@ -49,14 +54,13 @@ router.post("/", protect, async (req, res) => {
 });
 
 
-// ✅ Update booking payment status
 router.put("/:bookingId/payment", async (req, res) => {
   try {
     const updatedBooking = await Booking.findByIdAndUpdate(
       req.params.bookingId,
       { paymentDone: true },
       { new: true }
-    ).populate("counselor", "name email expectedFees specialty description"); // populate here too
+    ).populate("counselor", "name email expectedFees specialty description");
 
     res.status(200).json(updatedBooking);
   } catch (err) {
@@ -65,18 +69,21 @@ router.put("/:bookingId/payment", async (req, res) => {
   }
 });
 
-// ✅ Get all bookings (Admin use)
+
 router.get("/", protect, async (req, res) => {
   try {
     const allBookings = await Booking.find()
       .populate("user", "name email")
       .populate("counselor", "name email expectedFees specialty description");
-
+    console.log("All bookings fetched:", allBookings);
     res.status(200).json(allBookings);
   } catch (err) {
     console.error("Error fetching all bookings:", err);
     res.status(500).json({ message: "Failed to fetch all bookings" });
   }
 });
+
+  router.get("/:id", protect, getBookingById);
+
 
 export default router;

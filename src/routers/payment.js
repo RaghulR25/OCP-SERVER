@@ -5,16 +5,15 @@ import dotenv from "dotenv";
 dotenv.config();
 const router = express.Router();
 
-// ✅ Proper Stripe initialization with API version
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2023-10-16",
 });
 
-// ✅ Create a Stripe Checkout Session
-router.post("/create-checkout-session", async (req, res) => {
-  const { amount, counselorId, userId, date, time } = req.body;
 
-  if (!amount || !counselorId || !userId) {
+router.post("/create-checkout-session", async (req, res) => {
+  const { amount, counselorId,  date, time } = req.body;
+
+  if (!amount || !counselorId ) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -30,13 +29,13 @@ router.post("/create-checkout-session", async (req, res) => {
               name: "Counseling Session",
               description: `Session on ${date} at ${time}`,
             },
-            unit_amount: amount * 100, // Stripe expects amount in paise
+            unit_amount: amount * 100,
           },
           quantity: 1,
         },
       ],
-success_url: `${process.env.FRONTEND_URL}/dashboard?payment=success&user=${userId}&counselor=${counselorId}&date=${date}&time=${time}`,
-  cancel_url: `${process.env.FRONTEND_URL}/dashboard?payment=failed`,
+success_url: `${process.env.FRONTEND_URL}dashboard`,
+  cancel_url: `${process.env.FRONTEND_URL}dashboard`,
     });
 
     console.log("✅ Stripe session created:", session.id);

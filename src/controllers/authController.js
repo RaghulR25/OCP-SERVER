@@ -73,7 +73,7 @@ export const loginUser = async (req, res) => {
 
 export const getMe = async (req, res) => {
   try {
-    // `req.user` should be set by your `protect` middleware
+
     const user = req.user;
     res.json({ user });
   } catch (err) {

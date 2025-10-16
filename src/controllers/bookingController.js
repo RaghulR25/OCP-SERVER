@@ -1,6 +1,6 @@
 import Booking from "../modles/Booking.js";
 
-// Create Booking (only for logged-in user)
+
 export const createBooking = async (req, res) => {
   try {
     const { counselor, date, time } = req.body;
@@ -35,12 +35,12 @@ export const createBooking = async (req, res) => {
   }
 };
 
-// Get bookings for logged-in user
-// Get bookings by user with counselor info populated
+
 export const getBookingsByUser = async (req, res) => {
   try {
     const bookings = await Booking.find({ user: req.params.userId })
-      .populate("counselor", "name email specialty expectedFees") // make sure this is here
+      .populate("counselor", "name email specialty expectedFees") 
+       .populate("user", "name email")
       .sort({ date: 1, time: 1 });
 
     res.json(bookings);
@@ -50,14 +50,30 @@ export const getBookingsByUser = async (req, res) => {
   }
 };
 
-// ✅ Get all bookings for a specific counselor (with user details)
 export const getBookingsByCounselor = async (req, res) => {
   try {
     const bookings = await Booking.find({ counselor: req.params.counselorId })
-      .populate("user", "name email"); // include user details
+      .populate("user", "name email"); 
     res.json(bookings);
   } catch (err) {
     console.error("Error fetching counselor bookings:", err);
     res.status(500).json({ message: "Failed to fetch counselor bookings" });
+  }
+};
+
+
+export const getBookingById = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
+      .populate("user", "name email")
+      .populate("counselor", "name email specialty expectedFees");
+
+    if (!booking)
+      return res.status(404).json({ message: "Booking not found" });
+
+    res.status(200).json(booking);
+  } catch (err) {
+    console.error("Error fetching booking by ID:", err);
+    res.status(500).json({ message: "Server error fetching booking" });
   }
 };
